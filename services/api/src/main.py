@@ -17,8 +17,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 # Configuration
-PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
-DATA_DIR = PROJECT_ROOT / "data"
+# Paths - check for Docker mount first, then fall back to project-relative paths
+# In Docker, data is mounted at /app/data
+# Locally, data is at PROJECT_ROOT/data
+if Path("/app/data").exists():
+    DATA_DIR = Path("/app/data")
+else:
+    PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
+    DATA_DIR = PROJECT_ROOT / "data"
+
 EMBEDDINGS_DIR = DATA_DIR / "embeddings"
 RAW_DIR = DATA_DIR / "raw"
 

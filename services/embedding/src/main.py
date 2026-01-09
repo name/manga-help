@@ -26,9 +26,15 @@ MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
 EMBEDDING_DIMENSION = 768
 BATCH_SIZE = 32  # Process embeddings in batches for efficiency
 
-# Paths - relative to project root
-PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
-DATA_DIR = PROJECT_ROOT / "data"
+# Paths - check for Docker mount first, then fall back to project-relative paths
+# In Docker, data is mounted at /app/data
+# Locally, data is at PROJECT_ROOT/data
+if Path("/app/data").exists():
+    DATA_DIR = Path("/app/data")
+else:
+    PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
+    DATA_DIR = PROJECT_ROOT / "data"
+
 RAW_DIR = DATA_DIR / "raw"
 DETAILS_DIR = RAW_DIR / "manga_details"
 EMBEDDINGS_DIR = DATA_DIR / "embeddings"

@@ -30,10 +30,15 @@ MIN_REQUEST_INTERVAL = 1.0 / REQUESTS_PER_SECOND  # 1 second between requests
 DEFAULT_TARGET_MANGA = 5000
 ITEMS_PER_PAGE = 25  # Jikan max
 
-# Paths - relative to project root
-# __file__ is in services/ingestion/src/main.py, so go up 3 levels to reach manga-help
-PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
-DATA_DIR = PROJECT_ROOT / "data"
+# Paths - check for Docker mount first, then fall back to project-relative paths
+# In Docker, data is mounted at /app/data
+# Locally, data is at PROJECT_ROOT/data
+if Path("/app/data").exists():
+    DATA_DIR = Path("/app/data")
+else:
+    PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
+    DATA_DIR = PROJECT_ROOT / "data"
+
 RAW_DIR = DATA_DIR / "raw"
 DETAILS_DIR = RAW_DIR / "manga_details"
 PROGRESS_FILE = RAW_DIR / "ingestion_progress.json"
