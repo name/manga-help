@@ -1,0 +1,81 @@
+version: "3.8"
+
+services:
+  # Search API backend
+  api:
+    build:
+      context: ./services/api
+      dockerfile: Dockerfile
+    container_name: mangahelp-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount data directory for embeddings and raw data
+      - ./data:/app/data:ro
+    environment:
+      - PYTHONUNBUFFERED=1
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - mangahelp-network
+
+  # React frontend served by nginx
+  frontend:
+    build:
+      context: ./services/frontend
+      dockerfile: Dockerfile
+    container_name: mangahelp-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - mangahelp-network
+
+  # Embedding service (run on-demand, not continuously)
+  embedding:
+    build:
+      context: ./services/embedding
+      dockerfile: Dockerfile
+    container_name: mangahelp-embedding
+    volumes:
+      - ./data:/app/data
+    profiles:
+      - tools
+    networks:
+      - mangahelp-network
+
+  # Ingestion service (run on-demand, not continuously)
+  ingestion:
+    build:
+      context: ./services/ingestion
+      dockerfile: Dockerfile
+    container_name: mangahelp-ingestion
+    volumes:
+      - ./data:/app/data
+    profiles:
+      - tools
+    networks:
+      - mangahelp-network
+
+networks:
+  mangahelp-network:
+    driver: bridge
+
+# Named volumes for persistent data (alternative to bind mounts)
+# volumes:
+#   manga-data:
+#     driver: local
